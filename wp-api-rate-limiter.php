@@ -838,12 +838,16 @@ class WP_API_Rate_Limiter {
         $htaccess_file = ABSPATH . '.htaccess';
         
         // Check if file exists and is writable
-        if (!file_exists($htaccess_file) || !is_writable($htaccess_file)) {
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        WP_Filesystem();
+        global $wp_filesystem;
+
+        if (!$wp_filesystem || !$wp_filesystem->exists($htaccess_file) || !$wp_filesystem->is_writable($htaccess_file)) {
             return false;
         }
         
         // Get current content
-        $htaccess_content = file_get_contents($htaccess_file);
+        $htaccess_content = $wp_filesystem->get_contents($htaccess_file);
         
         // Define our markers
         $start_marker = '# BEGIN WP API Rate Limiter';
@@ -886,7 +890,7 @@ class WP_API_Rate_Limiter {
         $htaccess_content = $new_rules . $htaccess_content;
         
         // Write back to file
-        return file_put_contents($htaccess_file, $htaccess_content) !== false;
+        return $wp_filesystem->put_contents($htaccess_file, $htaccess_content, FS_CHMOD_FILE);
     }
 
     /**
