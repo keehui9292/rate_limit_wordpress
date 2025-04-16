@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP API Rate Limiter
  * Description: Simple but effective rate limiting for WordPress REST API with login protection
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Hoowey Studio
  * Author URI: https://hoowey.com
  */
