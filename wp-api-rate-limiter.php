@@ -47,6 +47,7 @@ class WP_API_Rate_Limiter {
         // Admin menu and settings
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
+        add_action('template_redirect', array($this, 'block_frontend_access'));
         
         // Handle login hiding if enabled
         $settings = $this->get_settings();
@@ -59,6 +60,81 @@ class WP_API_Rate_Limiter {
     public function init() {
         // Apply rate limiting to REST API
         add_filter('rest_pre_dispatch', [$this, 'limit_api_requests'], 10, 3);
+    }
+
+    /**
+     * Block access to front-end pages with custom HTML response
+     */
+    public function block_frontend_access() {
+        // Don't block API requests
+        if (strpos($_SERVER['REQUEST_URI'], '/wp-json/') !== false) {
+            return;
+        }
+        
+        // Don't block admin access
+        if (is_admin() || strpos($_SERVER['REQUEST_URI'], '/wp-admin/') !== false || strpos($_SERVER['REQUEST_URI'], '/wp-login.php') !== false) {
+            return;
+        }
+        
+        // Send 403 header
+        status_header(403);
+        
+        // Output clean, custom HTML without WordPress references or API endpoints
+        $html = '<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>API Access Only</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+                    background-color: #f5f5f5;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    text-align: center;
+                }
+                .container {
+                    background-color: #fff;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                    padding: 40px;
+                    max-width: 500px;
+                    width: 90%;
+                }
+                h1 {
+                    color: #e74c3c;
+                    margin-top: 0;
+                }
+                p {
+                    font-size: 16px;
+                    line-height: 1.6;
+                    margin-bottom: 20px;
+                }
+                .status-code {
+                    font-size: 12px;
+                    color: #777;
+                    margin-top: 30px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Access Restricted</h1>
+                <p>This server provides API services to authorized applications only.</p>
+                <p>Direct browser access to this resource is not permitted.</p>
+                <div class="status-code">Status Code: 403 Forbidden</div>
+            </div>
+        </body>
+        </html>';
+        
+        echo $html;
+        exit;
     }
     
     /**
